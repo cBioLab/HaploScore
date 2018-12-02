@@ -59,8 +59,8 @@ void countPaths(vector_type& haplo,DynamicGBWT& dynamic_index){
     count++;
   }
   memo_B.reserve(count);
+  vector<int> v(haplo_len,-1);
   for(int i=0;i<count;i++){
-    vector<int> v(haplo_len,-1);
     memo_B.push_back(v);
   }
 }
@@ -119,6 +119,7 @@ double calcHaploScore(){
   return score;
 }
 
+//h[0,ep],recombination数rのモザイクのパターン数
 int A(int ep,int r){
   if(r > ep) return 0;
   if(r == 0) return subpath_count[convertIndex(0,ep)];
@@ -130,6 +131,7 @@ int A(int ep,int r){
   return count;
 }
 
+//h[0,ep],recombination数rかつ，最右のセグメントがh[n,ep]であるモザイクのパターン数
 int B(int n,int ep,int r){
   if(memo_B[memoIndex[convertIndex(n,ep)]][r] != -1) return memo_B[memoIndex[convertIndex(n,ep)]][r];
   if(r == 0 && n == 0) return memo_B[memoIndex[convertIndex(n,ep)]][r] = A(ep,r);
