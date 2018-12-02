@@ -8,13 +8,19 @@ typedef struct{
   double pi_c,pi_r;
 }Param;
 
-double calcHaploScore(vector<int>& count_memo,int haplo_len,Param& param);
-int A(vector<int>& count_memo,int haplo_len,int ep,int r);
-int B(vector<int>& count_memo,int haplo_len,int n,int ep,int r);
+vector<int> subpath_count; //subpathの本数を記録
+vector<int> memoIndex; //メモ化されたどの位置を参照するか記録
+vector<vector<int>> memo_B; //Bのメモ化した値を記録 (|A_b| * R)
+int haplo_len;
+Param params;
 
-void setParams(Param& param){
-  param.pi_c = 0.9;
-  param.pi_r = 0.01; //todo : |H|から計算するように変更
+double calcHaploScore();
+int A(int ep,int r);
+int B(int n,int ep,int r);
+
+void setParams(){
+  params.pi_c = 0.9;
+  params.pi_r = 0.01; //todo : |H|から計算するように変更
 }
 
 //todo : ファイル読み込み
@@ -27,33 +33,54 @@ void setPaths(vector_type& haplo,DynamicGBWT& dynamic_index){
   dynamic_index.insert(h2);
   dynamic_index.insert(h3);
   haplo = h;
+  haplo_len = haplo.size();
+  subpath_count.reserve(haplo_len*(haplo_len+1)/2);
+  memoIndex.reserve(haplo_len*(haplo_len+1)/2);
 }
 
-void countPaths(vector<int>& count_memo,vector_type& haplo,DynamicGBWT& dynamic_index){
-  int haplo_len = haplo.size();
+void countPaths(vector_type& haplo,DynamicGBWT& dynamic_index){
+  int count = 0;
   for(int i=0;i<haplo_len;i++){
     SearchState s = find(dynamic_index,haplo[i]);
-    count_memo.push_back(s.size());
+    subpath_count.push_back(s.size());
+    memoIndex.push_back(count);
     for(int j=i+1;j<haplo_len;j++){
       if(s.size() == 0){
-        count_memo.push_back(0);
+        subpath_count.push_back(0);
+        memoIndex.push_back(count);
         continue;
       }
       s = extend(dynamic_index,s,haplo[j]);
-      count_memo.push_back(s.size());
+      int range = s.size();
+      if(subpath_count.back() != range) count++;
+      subpath_count.push_back(range);
+      memoIndex.push_back(count);
     }
+    count++;
+  }
+  memo_B.reserve(count);
+  for(int i=0;i<count;i++){
+    vector<int> v(haplo_len,-1);
+    memo_B.push_back(v);
   }
 }
 
-int convertIndex(int i,int j,int n){
+int convertIndex(int i,int j){
+  int n = haplo_len;
   return i*n - i*(i-1)/2 + (j-i);
 }
 
-//for debug count_memo
-void printMatrix(vector<int>& matrix, int n){
-  for(int i=0;i<n;i++){
-    for(int j=i;j<n;j++){
-      cout << matrix[convertIndex(i,j,n)] << " ";
+//for debug subpath_count
+void printMatrix(){
+  for(int i=0;i<haplo_len;i++){
+    for(int j=i;j<haplo_len;j++){
+      cout << subpath_count[convertIndex(i,j)] << " ";
+    }
+    cout << endl;
+  }
+  for(int i=0;i<haplo_len;i++){
+    for(int j=i;j<haplo_len;j++){
+      cout << memoIndex[convertIndex(i,j)] << " ";
     }
     cout << endl;
   }
@@ -64,31 +91,27 @@ int main(){
 
   DynamicGBWT dynamic_index;
   vector_type haplo;
-  vector<int> count_memo;
-  Param params;
 
-  setParams(params);
+  setParams();
   setPaths(haplo,dynamic_index);
 
-  int haplo_len = haplo.size();
-  count_memo.reserve(haplo_len*(haplo_len+1)/2);
-  countPaths(count_memo,haplo,dynamic_index);
+  countPaths(haplo,dynamic_index);
 
-  printMatrix(count_memo,haplo_len);
+  printMatrix();
 
-  double haplo_score = calcHaploScore(count_memo,haplo_len,params);
+  double haplo_score = calcHaploScore();
 
   cout << haplo_score << endl;
 
   return 0;
 }
 
-double calcHaploScore(vector<int>& count_memo,int haplo_len,Param& param){
+double calcHaploScore(){
   double score = 0.0;
-  double mosaic_score = pow(param.pi_c,haplo_len-1);
-  double rho = param.pi_r / param.pi_c;
+  double mosaic_score = pow(params.pi_c,haplo_len-1);
+  double rho = params.pi_r / params.pi_c;
   for(int i=0;i<haplo_len;i++){
-    int mosaic_count = A(count_memo,haplo_len,haplo_len-1,i);
+    int mosaic_count = A(haplo_len-1,i);
     cout << mosaic_count << endl;
     score += mosaic_count * mosaic_score;
     mosaic_score *= rho;
@@ -96,23 +119,24 @@ double calcHaploScore(vector<int>& count_memo,int haplo_len,Param& param){
   return score;
 }
 
-int A(vector<int>& count_memo,int haplo_len,int ep,int r){
+int A(int ep,int r){
   if(r > ep) return 0;
-  if(r == 0) return count_memo[convertIndex(0,ep,haplo_len)];
+  if(r == 0) return subpath_count[convertIndex(0,ep)];
   int count = 0;
   for(int i=0;i<=ep;i++){
     if(i < r) continue;
-    count += B(count_memo,haplo_len,i,ep,r);
+    count += B(i,ep,r);
   }
   return count;
 }
 
-int B(vector<int>& count_memo,int haplo_len,int n,int ep,int r){
-  if(r == 0 && n == 0) return A(count_memo,haplo_len,ep,r);
-  if(r == 0 || n == 0) return 0;
-  int count = count_memo[convertIndex(n,ep,haplo_len)] * A(count_memo,haplo_len,n-1,r-1);
+int B(int n,int ep,int r){
+  if(memo_B[memoIndex[convertIndex(n,ep)]][r] != -1) return memo_B[memoIndex[convertIndex(n,ep)]][r];
+  if(r == 0 && n == 0) return memo_B[memoIndex[convertIndex(n,ep)]][r] = A(ep,r);
+  if(r == 0 || n == 0) return memo_B[memoIndex[convertIndex(n,ep)]][r] = 0;
+  int count = subpath_count[convertIndex(n,ep)] * A(n-1,r-1);
   for(int i=0;i<n;i++){
-    count -= B(count_memo,haplo_len,i,ep,r-1);
+    count -= B(i,ep,r-1);
   }
-  return count;
+  return memo_B[memoIndex[convertIndex(n,ep)]][r] = count;
 }
