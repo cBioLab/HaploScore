@@ -1,0 +1,3 @@
+# HaploScore
+
+HaploScoreのリポジトリと同一階層にgbwtとsdsl-liteリポジトリを配備して使う
