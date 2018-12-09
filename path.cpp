@@ -1,6 +1,8 @@
 //パスの確率計算
 #include <gbwt/dynamic_gbwt.h>
 
+#define DEBUG
+
 using namespace std;
 using namespace gbwt;
 
@@ -12,6 +14,7 @@ vector<int> subpath_count; //subpathの本数を記録
 vector<int> memoIndex; //メモ化されたどの位置を参照するか記録
 vector<vector<int>> memo_B; //Bのメモ化した値を記録 (|A_b| * R)
 int haplo_len;
+int n_of_haplos;
 Param params;
 
 double calcHaploScore();
@@ -20,22 +23,50 @@ int B(int n,int ep,int r);
 
 void setParams(){
   params.pi_c = 0.9;
-  params.pi_r = 0.01; //todo : |H|から計算するように変更
+  params.pi_r = (1 - params.pi_c) / n_of_haplos;
 }
 
-//todo : ファイル読み込み
-void setPaths(vector_type& haplo,DynamicGBWT& dynamic_index){
-  vector_type h{2,3,4};
-  vector_type h1{1,2,3,0};
-  vector_type h2{2,3,4,0};
-  vector_type h3{3,4,5,0};
-  dynamic_index.insert(h1);
-  dynamic_index.insert(h2);
-  dynamic_index.insert(h3);
-  haplo = h;
+void setHaplos(string& haploFile,vector<vector_type>& haplos){
+    ifstream ifs(haploFile);
+    string str;
+    if (!ifs) exit(-1);
+    while (getline(ifs, str)){
+        string token;
+        istringstream stream(str);
+        vector_type v;
+        while (getline(stream, token, ',')){
+            v.push_back(stoi(token.c_str()));
+        }
+        if(v.size()) haplos.push_back(v);
+    }
+}
+
+void setPaths(string& haploFile,string& haploSetFile,vector_type& haplo,DynamicGBWT& dynamic_index){
+  vector<vector_type> h;
+  vector<vector_type> haploSet;
+  setHaplos(haploFile,h);
+  setHaplos(haploSetFile,haploSet);
+  haplo = h[0];
+  n_of_haplos = haploSet.size();
+  for(int i=0;i<n_of_haplos;i++){
+    dynamic_index.insert(haploSet[i]);
+  }
   haplo_len = haplo.size();
   subpath_count.reserve(haplo_len*(haplo_len+1)/2);
   memoIndex.reserve(haplo_len*(haplo_len+1)/2);
+
+  #ifdef DEBUG
+  cerr << "haplotype sequence" << endl;
+  for(int i=0;i<haplo_len;i++) cerr << haplo[i] << " ";
+  cerr << endl;
+  cerr << "haplo set" << endl;
+  for(auto haplo_itr = haploSet.begin();haplo_itr != haploSet.end();haplo_itr++){
+    for(auto itr = (*haplo_itr).begin();itr != (*haplo_itr).end();itr++){
+      cerr << *itr << " ";
+    }
+    cerr << endl;
+  }
+  #endif
 }
 
 void countPaths(vector_type& haplo,DynamicGBWT& dynamic_index){
@@ -72,28 +103,57 @@ int convertIndex(int i,int j){
 
 //for debug subpath_count
 void printMatrix(){
+  #ifdef DEBUG
+  cerr << "subpath_count" << endl;
   for(int i=0;i<haplo_len;i++){
     for(int j=i;j<haplo_len;j++){
-      cout << subpath_count[convertIndex(i,j)] << " ";
+      cerr << subpath_count[convertIndex(i,j)] << " ";
     }
-    cout << endl;
+    cerr << endl;
   }
+  cerr << "memoIndex" << endl;
   for(int i=0;i<haplo_len;i++){
     for(int j=i;j<haplo_len;j++){
-      cout << memoIndex[convertIndex(i,j)] << " ";
+      cerr << memoIndex[convertIndex(i,j)] << " ";
     }
-    cout << endl;
+    cerr << endl;
   }
+  #endif
 }
 
-int main(){
+int main(int argc,char* argv[]){
+  string haploFile = "haplo.csv";
+  string haploSetFile = "haploSet.csv";
+
+  int opt;
+  while((opt = getopt(argc, argv, "h:p:f:c:e:s:")) != -1){
+    switch(opt){
+    case 'h':
+      {
+    	  haploFile = optarg;
+	      break;
+      }
+    case 'H':
+      {
+	      haploSetFile = optarg;
+	      break;
+      }
+    default:
+      {
+	      fprintf(stderr,"error! \'%c\' \'%c\'\n", opt, optopt);
+	      return -1;
+	      break;
+      }
+    }
+  }
+
   Verbosity::set(Verbosity::SILENT);
 
   DynamicGBWT dynamic_index;
   vector_type haplo;
 
-  setParams();
-  setPaths(haplo,dynamic_index);
+  setPaths(haploFile,haploSetFile,haplo,dynamic_index);
+  setParams(); 
 
   countPaths(haplo,dynamic_index);
 
@@ -112,7 +172,6 @@ double calcHaploScore(){
   double rho = params.pi_r / params.pi_c;
   for(int i=0;i<haplo_len;i++){
     int mosaic_count = A(haplo_len-1,i);
-    cout << mosaic_count << endl;
     score += mosaic_count * mosaic_score;
     mosaic_score *= rho;
   }
