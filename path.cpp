@@ -21,8 +21,8 @@ double calcHaploScore();
 int A(int ep,int r);
 int B(int n,int ep,int r);
 
-void setParams(){
-  params.pi_c = 0.9;
+void setParams(double p_of_chain){
+  params.pi_c = p_of_chain;
   params.pi_r = (1 - params.pi_c) / n_of_haplos;
 }
 
@@ -124,9 +124,10 @@ void printMatrix(){
 int main(int argc,char* argv[]){
   string haploFile = "haplo.csv";
   string haploSetFile = "haploSet.csv";
+  double p_of_chain = 0.7;
 
   int opt;
-  while((opt = getopt(argc, argv, "h:p:f:c:e:s:")) != -1){
+  while((opt = getopt(argc, argv, "h:p:H:")) != -1){
     switch(opt){
     case 'h':
       {
@@ -136,6 +137,11 @@ int main(int argc,char* argv[]){
     case 'H':
       {
 	      haploSetFile = optarg;
+	      break;
+      }
+    case 'p':
+      {
+	      p_of_chain = stod(optarg);
 	      break;
       }
     default:
@@ -153,7 +159,7 @@ int main(int argc,char* argv[]){
   vector_type haplo;
 
   setPaths(haploFile,haploSetFile,haplo,dynamic_index);
-  setParams(); 
+  setParams(p_of_chain); 
 
   countPaths(haplo,dynamic_index);
 
