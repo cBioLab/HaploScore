@@ -148,6 +148,7 @@ int main(int argc,char* argv[]){
     case 's':
       {
         haploScoreFile = optarg;
+        break;
       }
     default:
       {
