@@ -27,9 +27,9 @@ int main(){
     inputfile1 >> haploScore1; inputfile1.close();
     inputfile2 >> haploScore2; inputfile2.close();
     double arglog = log(haploScore2 / haploScore1);
-    outputfile<<arglog<<",";
+    outputfile << arglog << ",";
   }
-  outputfile<<endl;
+  outputfile << endl;
   outputfile.close();
 
   return 0;
