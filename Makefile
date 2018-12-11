@@ -13,7 +13,7 @@ HEADERS=$(wildcard ../gbwt/include/gbwt/*.h)
 OBJS=$(SOURCES:.cpp=.o)
 
 LIBRARY=../gbwt/libgbwt.a
-PROGRAMS=path
+PROGRAMS=path generator tester
 
 all:$(LIBRARY) $(PROGRAMS)
 
@@ -25,6 +25,12 @@ $(LIBRARY):$(LIBOBJS)
 
 path:path.o $(LIBRARY)
 	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBRARY) $(LIBS)
+
+generator:generator.o
+	$(MY_CXX) -o $@ $<
+
+tester:tester.o
+	$(MY_CXX) -o $@ $<
 
 clean:
 	rm -f $(PROGRAMS) $(OBJS)

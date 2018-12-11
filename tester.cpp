@@ -29,7 +29,7 @@ int main(){
       double haploScore1, haploScore2;
       inputfile1 >> haploScore1; inputfile1.close();
       inputfile2 >> haploScore2; inputfile2.close();
-      double arglog = log(haploScore2 / haploScore1);
+      double arglog = haploScore2 - haploScore1;
       outputfile << arglog;
       if(i < numofTest) outputfile << ",";
     }
