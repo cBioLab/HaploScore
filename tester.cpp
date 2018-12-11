@@ -16,10 +16,10 @@ int main(){
     string haploSetfile2 = "haploSet_cut" + to_string(i) + ".csv";
     string haplofile = "haplo" + to_string(i) + ".csv";
 
-    system("./generator " + to_string(i));
-    system("./path -H " + haploSetfile1 + " -h " + haplofile + " >> result.csv");
+    system(("./generator " + to_string(i)).c_str());
+    system(("./path -H " + haploSetfile1 + " -h " + haplofile + " >> result.csv").c_str());
     system("echo , >> result.csv");
-    system("./path -H " + haploSetfile2 + " -h " + haplofile + " >> result.csv");
+    system(("./path -H " + haploSetfile2 + " -h " + haplofile + " >> result.csv").c_str());
     system("echo \n >> result.csv");
   }
 
