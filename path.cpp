@@ -124,10 +124,11 @@ void printMatrix(){
 int main(int argc,char* argv[]){
   string haploFile = "haplo.csv";
   string haploSetFile = "haploSet.csv";
+  string haploScoreFile = "haploScore.csv";
   double p_of_chain = 0.7;
 
   int opt;
-  while((opt = getopt(argc, argv, "h:p:H:")) != -1){
+  while((opt = getopt(argc, argv, "h:p:H:s:")) != -1){
     switch(opt){
     case 'h':
       {
@@ -143,6 +144,10 @@ int main(int argc,char* argv[]){
       {
 	      p_of_chain = stod(optarg);
 	      break;
+      }
+    case 's':
+      {
+        haploScoreFile = optarg;
       }
     default:
       {
@@ -165,9 +170,10 @@ int main(int argc,char* argv[]){
 
   printMatrix();
 
+  ofstream outputfile(haploScoreFile);
   double haplo_score = calcHaploScore();
-
-  cout << haplo_score << endl;
+  outputfile << haplo_score << endl;
+  outputfile.close();
 
   return 0;
 }
