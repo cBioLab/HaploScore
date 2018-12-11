@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <vector>
 #include <random>
-#include<fstream>
+#include <fstream>
 using namespace std;
 
 #define dbg(x) cerr << #x << "=" << x << endl
@@ -14,6 +14,10 @@ struct Edge{
 typedef vector<Edge> Edges;
 typedef vector<Edges> Graph;
 typedef vector<int> Path;
+
+string getfileName(string prf, string suf, int fileidx){
+  return "./testdata/" + prf + to_string(fileidx) + suf;
+}
 
 Graph createDAG(int numofNode, int maxgroupSize, int maxpathSize){
   random_device rnd;
@@ -69,10 +73,10 @@ Graph createDAG(int numofNode, int maxgroupSize, int maxpathSize){
   return resultGraph;
 }
 
-void graphOutput(Graph g){
+void graphOutput(Graph g,int fileidx){
   int numofNode = g.size();
 
-  ofstream outputfile1("topology.txt");
+  ofstream outputfile1(getfileName("topology", ".txt", fileidx));
   outputfile1 << "Number of nodes = " << numofNode << endl;
   for(int crtNode = 0; crtNode < numofNode; crtNode++){
     for(Edge e : g[crtNode]){
@@ -81,7 +85,7 @@ void graphOutput(Graph g){
   }
   outputfile1.close();
 
-  ofstream outputfile2("topology_prob.txt");
+  ofstream outputfile2(getfileName("topology_prob", ".txt", fileidx));
   outputfile2 << "Number of nodes = " << numofNode << endl;
   for(int crtNode = 0; crtNode < numofNode; crtNode++){
     for(Edge e : g[crtNode]){
@@ -91,42 +95,43 @@ void graphOutput(Graph g){
   outputfile2.close();
 }
 
-void subpathSearch(const Graph& givenGraph, int crtNode, vector<Path>& resultPaths, vector<double>& subpathProbs,
-  vector<int> crtNodes, double crtProb, int pathlenLb, int pathlenUb){
-  if((int) crtNodes.size() >= pathlenLb && (int) crtNodes.size() <= pathlenUb){
-    resultPaths.push_back(crtNodes);
-    subpathProbs.push_back(crtProb);
-  }
+void subpathEnum(const Graph& givenGraph, int crtNode, vector<Path>& resultPaths,
+ vector<double>& subpathProbs, Path crtNodes, double crtProb){
+
+  resultPaths.push_back(crtNodes);
+  subpathProbs.push_back(crtProb);
   for(Edge e : givenGraph[crtNode]){
     crtNodes.push_back(e.nxtNode);
-    subpathSearch(givenGraph, e.nxtNode, resultPaths, subpathProbs, crtNodes, crtProb * ((double)e.probability / 100.0), pathlenLb, pathlenUb);
+    subpathEnum(givenGraph, e.nxtNode, resultPaths, subpathProbs, crtNodes, crtProb * ((double)e.probability / 100.0));
     crtNodes.pop_back();
   }
 }
 
-void extractSubpath(const Graph& givenGraph, int numofNode, int pathlenLb, int pathlenUb){
-  vector<Path> resultPaths;
-  vector<double> subpathProbs;
-
-  for(int crtNode = 0; crtNode < numofNode; crtNode++){
-    subpathSearch(givenGraph, crtNode, resultPaths, subpathProbs, vector<int>(1,crtNode), 1.0, pathlenLb, pathlenUb);
-  }
-
-  vector<int> selectedPathidx;
+void extractSubpath(const Graph& givenGraph, int numofNode, int fileidx){
   random_device rnd;
   mt19937 mt(rnd());
   uniform_int_distribution<> rand100(0, 99);
-  for(int i = 0; i < (int)resultPaths.size(); i++){
+
+  vector<Path> allsubPaths;
+  vector<double> subpathProbs;
+  for(int crtNode = 0; crtNode < numofNode; crtNode++){
+    subpathEnum(givenGraph, crtNode, allsubPaths, subpathProbs, vector<int>(1,crtNode), 1.0);
+  }
+
+  vector<Path> selectedPaths;
+  vector<double> selectedPathprobs;
+  for(int i = 0; i < (int)allsubPaths.size(); i++){
     double p = (double)rand100(mt) / 100.0;
     if(p < subpathProbs[i]){
-      selectedPathidx.push_back(i);
+      selectedPaths.push_back(allsubPaths[i]);
+      selectedPathprobs.push_back(subpathProbs[i]);
     }
   }
 
-  ofstream outputfile1("haploSet.csv");
-  for(int i : selectedPathidx){
-    Path p = resultPaths[i];
-    double prob = subpathProbs[i];
+  // output haploSet.csv
+  ofstream outputfile1(getfileName("haploSet", ".csv", fileidx));
+  for(int i = 0;i < (int)selectedPaths.size(); i++){
+    Path p = selectedPaths[i];
     for(int node : p){
       outputfile1 << node + 1 << ","; // 1-indexed
     }
@@ -134,10 +139,10 @@ void extractSubpath(const Graph& givenGraph, int numofNode, int pathlenLb, int p
   }
   outputfile1.close();
 
-  ofstream outputfile2("haploSet_prob.txt");
-  for(int i : selectedPathidx){
-    Path p = resultPaths[i];
-    double prob = subpathProbs[i];
+  ofstream outputfile2(getfileName("haploSet_prob", ".txt", fileidx));
+  for(int i = 0;i < (int)selectedPaths.size(); i++){
+    Path p = selectedPaths[i];
+    double prob = selectedPathprobs[i];
     for(int node : p){
       outputfile2 << node + 1 << ","; // 1-indexed
     }
@@ -145,13 +150,72 @@ void extractSubpath(const Graph& givenGraph, int numofNode, int pathlenLb, int p
     outputfile2 << endl;
   }
   outputfile2.close();
+
+  // cutting path
+  vector<Path> cutPaths;
+  double cuttingProb = 0.02;
+  for(int i = 0; i < (int)selectedPaths.size(); i++){
+    Path path;
+    for(int node : selectedPaths[i]){
+      double p = (double)rand100(mt) / 100.0;
+      if(path.size() > 0 && p < cuttingProb){
+        cutPaths.push_back(path);
+        path.clear();
+      }
+      path.push_back(node);
+    }
+    if(path.size() > 0) cutPaths.push_back(path);
+  }
+
+  // output haploSet_cut.csv
+  ofstream outputfile3(getfileName("haploSet_cut", ".csv", fileidx));
+  for(int i = 0;i < (int)cutPaths.size(); i++){
+    Path p = cutPaths[i];
+    for(int node : p){
+      outputfile3 << node + 1 << ","; // 1-indexed
+    }
+    outputfile3 << "0" <<endl; // ENDMARKER
+  }
+  outputfile3.close();
 }
 
-int main(){
+void searchHaplo(const Graph& givenGraph, int crtNode, Path crtNodes, Path& foundHaplo, int haploSize){
+  if((int)crtNodes.size() >= haploSize){
+    foundHaplo = crtNodes;
+    return ;
+  }
+  for(Edge e : givenGraph[crtNode]){
+    crtNodes.push_back(e.nxtNode);
+    searchHaplo(givenGraph, e.nxtNode, crtNodes, foundHaplo, haploSize);
+    if(foundHaplo.size() > 0)return ;
+    crtNodes.pop_back();
+  }
+}
 
+void createHaplo(const Graph& givenGraph, int fileidx, int haploSize){
+  Path foundHaplo;
+  searchHaplo(givenGraph, 0, Path(1,0), foundHaplo, haploSize);
+
+  // output Haplo
+  ofstream outputfile(getfileName("haplo", ".csv", fileidx));
+  for(int node : foundHaplo){
+    outputfile << node + 1 << ","; // 1-indexed
+  }
+  outputfile << "0" <<endl; // ENDMARKER
+  outputfile.close();
+}
+
+int main(int argc, char *argv[]){
+  if(argc < 2){
+    cerr << "few arguments." << endl;
+    return -1;
+  }
+
+  int fileidx = atoi(argv[1]);
   Graph givenGraph = createDAG(25, 5, 2);
-  graphOutput(givenGraph);
-  extractSubpath(givenGraph,givenGraph.size(),1,100);
+  graphOutput(givenGraph, fileidx);
+  extractSubpath(givenGraph, givenGraph.size(), fileidx);
+  createHaplo(givenGraph, fileidx, 12);
 
   return 0;
 }
