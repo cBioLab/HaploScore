@@ -118,13 +118,10 @@ void extractSubpath(const Graph& givenGraph, int numofNode, int pathlenLb, int p
   uniform_int_distribution<> rand100(0, 99);
   for(int i = 0; i < (int)resultPaths.size(); i++){
     double p = (double)rand100(mt) / 100.0;
-    dbg(p); dbg(subpathProbs[i]);
     if(p < subpathProbs[i]){
       selectedPathidx.push_back(i);
     }
   }
-
-  dbg(selectedPathidx.size()); dbg(resultPaths.size());
 
   ofstream outputfile1("haploSet.csv");
   for(int i : selectedPathidx){
