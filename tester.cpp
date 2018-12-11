@@ -7,7 +7,7 @@ using namespace std;
 
 int main(){
 
-  const int numofTest = 10;
+  const int numofTest = 500;
 
   system("mkdir testdata");
   system("mkdir results");
