@@ -1,7 +1,7 @@
 //パスの確率計算
 #include <gbwt/dynamic_gbwt.h>
 
-#define DEBUG
+//#define DEBUG
 
 using namespace std;
 using namespace gbwt;

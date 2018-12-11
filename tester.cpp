@@ -7,7 +7,7 @@ using namespace std;
 
 int main(){
 
-  const int numofTest = 10000;
+  const int numofTest = 1000;
 
   for(int p = 1; p < 10; p++){
     system("rm -rf testdata");
