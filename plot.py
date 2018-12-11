@@ -1,7 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
  
-data = np.loadtxt("result.csv",delimiter=",")
+args = sys.argv
+data = np.loadtxt(args[1],delimiter=",")
 
 plt.hist(data)
 plt.show()
