@@ -14,7 +14,6 @@ int main(){
 
     system(("./generator " + to_string(i)).c_str());
     system(("./path -H " + haploSetfile1 + " -h " + haplofile + " >> result.csv").c_str());
-    system("echo , >> result.csv");
     system(("./path -H " + haploSetfile2 + " -h " + haplofile + " >> result.csv").c_str());
     system("echo \n >> result.csv");
   }
