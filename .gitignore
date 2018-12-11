@@ -1,7 +1,3 @@
 *.csv
 *.o
-*.cpp
-path
-
-!path.cpp
-
+*.txt
