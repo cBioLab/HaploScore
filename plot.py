@@ -5,5 +5,5 @@ import sys
 args = sys.argv
 data = np.loadtxt(args[1],delimiter=",")
 
-plt.hist(data)
+plt.hist(data,50)
 plt.show()
