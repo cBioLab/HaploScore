@@ -36,6 +36,7 @@ int main(){
     outputfile << endl;
     outputfile.close();
   }
+  system("python3 plot.py");
 
   return 0;
 }
