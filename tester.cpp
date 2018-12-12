@@ -35,6 +35,8 @@ int main(){
     }
     outputfile << endl;
     outputfile.close();
+
+    fprintf(stderr, "[+] Ended %d process. \n", p);
   }
   system("python3 plot.py");
 
