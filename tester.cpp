@@ -9,6 +9,7 @@ int main(){
 
   const int numofTest = 1000;
 
+  system("rm *.csv");
   for(int p = 1; p < 10; p += 1){
     system("rm -rf testdata");
     system("rm -rf results");
