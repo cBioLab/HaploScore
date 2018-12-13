@@ -16,7 +16,7 @@ int main(){
   for(int i = 1; i <= numofTest; i++){
     system(("./generator " + to_string(i)).c_str());
   }
-  fprintf(stderr, "[+] Generated.\n");
+  fprintf(stderr, "[+] Generated. \n");
 
   for(int p = 1; p < 10; p += 1){
     system("rm -rf results");
@@ -45,6 +45,7 @@ int main(){
     fprintf(stderr, "[+] Ended %d process. \n", p);
   }
   system("python3 plot.py");
+  fprintf(stderr, "[+] Ended plotting. \n");
 
   return 0;
 }
