@@ -129,7 +129,7 @@ void subhaploEnum(const Graph& givenGraph, int crtNode, HaploSet& resultHaplos,
   }
 }
 
-void extractSubhaplo(const Graph& givenGraph, int numofNode, int fileidx){
+HaploSet extractSubhaplo(const Graph& givenGraph, int numofNode, int fileidx){
   random_device rnd;
   mt19937 mt(rnd());
   uniform_int_distribution<> rand100(0, 99);
@@ -168,12 +168,18 @@ void extractSubhaplo(const Graph& givenGraph, int numofNode, int fileidx){
     outputfile2.close();
   }
 
-  // cutting haplo
+  return selectedHaplos;
+}
+
+void cuttingHaplo(const HaploSet& selectedHaplos, int fileidx){
+  random_device rnd;
+  mt19937 mt(rnd());
   HaploSet cutHaplos;
   double cuttingProb = 0.02; // Cutting probability = 2%
   for(int i = 0; i < (int)selectedHaplos.size(); i++){
     Haplo h;
     for(int node : selectedHaplos[i]){
+      uniform_int_distribution<> rand100(0,99);
       double p = (double)rand100(mt) / 100.0;
       if((int)h.size() > 0 && p < cuttingProb){
         cutHaplos.push_back(h);
@@ -185,6 +191,43 @@ void extractSubhaplo(const Graph& givenGraph, int numofNode, int fileidx){
   }
 
   outputHaploSet(cutHaplos, getfileName("haploSet_cut", ".csv", fileidx));
+}
+
+void shufflingHaplo(const HaploSet& selectedHaplos, int fileidx){
+  random_device rnd;
+  mt19937 mt(rnd());
+  HaploSet shufflingHaplos = selectedHaplos;
+  double shufflingProb = 0.05; // Shuffling probability = 2%
+
+  for(int i = 0; i < (int)shufflingHaplos.size(); i++){
+    uniform_int_distribution<> randvs(0,shufflingHaplos[i].size()-1);
+    int idx1 = randvs(mt);
+    int crtNode1 = shufflingHaplos[i][idx1];
+    bool done = false;
+    for(int j = i + 1; j < (int)shufflingHaplos.size(); j++){
+      for(int idx2 = 0; idx2 < (int)shufflingHaplos[j].size(); idx2++){
+        int crtNode2 = shufflingHaplos[j][idx2];
+        if(crtNode1 != crtNode2) continue;
+        uniform_int_distribution<> rand100(0,99);
+        double p = (double) rand100(mt) / 100.0;
+        if(p < shufflingProb){
+          Haplo nxh1,nxh2;
+          for(int k = 0; k <= idx1; k++)nxh1.push_back(shufflingHaplos[i][k]);
+          for(int k = 0; k <= idx2; k++)nxh2.push_back(shufflingHaplos[j][k]);
+          for(int k = idx1 + 1; k < (int)shufflingHaplos[i].size(); k++)nxh2.push_back(shufflingHaplos[i][k]);
+          for(int k = idx2 + 1; k < (int)shufflingHaplos[j].size(); k++)nxh1.push_back(shufflingHaplos[j][k]);
+
+          shufflingHaplos[i] = nxh1;
+          shufflingHaplos[j] = nxh2;
+          done = true;
+          break;
+        } else break;
+      }
+      if(done) break;
+    }
+  }
+
+  outputHaploSet(shufflingHaplos, getfileName("haploSet_shf", ".csv", fileidx));
 }
 
 void searchHaplo(const Graph& givenGraph, int crtNode, Haplo crtHaplo, Haplo& foundHaplo, int haploSize){
@@ -220,7 +263,9 @@ int main(int argc, char *argv[]){
   int fileidx = atoi(argv[1]);
   Graph givenGraph = createDAG(30, 5, 2);
   outputGraph(givenGraph, fileidx);
-  extractSubhaplo(givenGraph, givenGraph.size(), fileidx);
+  HaploSet extractHaplos = extractSubhaplo(givenGraph, givenGraph.size(), fileidx);
+  cuttingHaplo(extractHaplos, fileidx);
+  shufflingHaplo(extractHaplos, fileidx);
   createHaplo(givenGraph, fileidx, 15);
 
   return 0;
