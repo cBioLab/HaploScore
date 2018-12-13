@@ -10,10 +10,16 @@ int main(){
   const int numofTest = 1000;
 
   system("rm *.csv");
+  system("rm -rf testdata");
+  system("mkdir testdata");
+
+  for(int i = 1; i <= numofTest; i++){
+    system(("./generator " + to_string(i)).c_str());
+  }
+  fprintf(stderr, "[+] Generated.\n");
+
   for(int p = 1; p < 10; p += 1){
-    system("rm -rf testdata");
     system("rm -rf results");
-    system("mkdir testdata");
     system("mkdir results");
     ofstream outputfile("result" + to_string(p) + ".csv");
     for(int i = 1; i <= numofTest; i++){
@@ -23,7 +29,6 @@ int main(){
       string haploScorefile2 = "./results/haploScore_cut" + to_string(i) + ".csv";
       string haplofile = "./testdata/haplo" + to_string(i) + ".csv";
 
-      system(("./generator " + to_string(i)).c_str());
       system(("./path -H " + haploSetfile1 + " -h " + haplofile + " -s " + haploScorefile1 + " -p 0." + to_string(p)).c_str());
       system(("./path -H " + haploSetfile2 + " -h " + haplofile + " -s " + haploScorefile2 + " -p 0." + to_string(p)).c_str());
       ifstream inputfile1(haploScorefile1), inputfile2(haploScorefile2);
