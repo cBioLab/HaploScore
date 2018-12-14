@@ -17,8 +17,6 @@ with open('test.csv', 'r') as f:
       break
     seqdic[row[0]]=row[1];
 
-print(haplolist)
-print(seqdic)
 f = open('output.json', 'w')
 
 for haplo in haplolist:
