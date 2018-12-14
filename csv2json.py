@@ -4,7 +4,7 @@ import json
 haplolist = []
 seqdic = {}
 
-with open('test.csv', 'r') as f:
+with open('output.csv', 'r') as f:
   reader = csv.reader(f)
 
   for row in reader:

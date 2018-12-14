@@ -45,7 +45,7 @@ string getfileName(string prf, string suf, int fileidx){
 }
 
 GAM inputGAM(){
-  ifstream inputfile("test.txt");
+  ifstream inputfile("input.txt");
 
   string pathinfo, haploinfo;
   Haplo inputhaplo;
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]){
     cerr << endl;
   }
 #endif
-  outputGAM(resultgam, "test.csv");
+  outputGAM(resultgam, "output.csv");
 
   return 0;
 }
